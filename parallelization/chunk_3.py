@@ -19,7 +19,6 @@ if 1 in literals_in_chunk3:
     
 print("Chunk 3 literals before map: ", literals_in_chunk3)
 print("Chunk 3 literals after map: ", lit_map)
-print("\n\n\n")
 
 for cl in chunk_3: 
     literals =  tuple_to_litmap(cl, map, lit_map) # going from tuple to lit map 

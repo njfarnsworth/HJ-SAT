@@ -44,7 +44,7 @@ m = 2 # m is the potential Hales-Jewett number
 n = 3 # n is the length of the alphabet
 c = 2 # don't actually use this, just a reminder that we set c = 2
 # so, we're looking at HJ(n,2)
-print("Generating combinatorial lines and boolean literals for {m} = HJ({n},2)")
+print(f"Generating combinatorial lines and boolean literals for {m} = HJ({n},2)")
 
 alphabet = list(range(1, n+1))
 configs = []
