@@ -24,24 +24,6 @@ def create_var_map(tuples):
     """
     return {t: i+1 for i, t in enumerate(tuples)}
 
-def coordinate_fixes(n, indices=[1,2,3,4]):
-    """
-    Generate all combinations of [-1,1] for n coordinates, 
-    with the first fixed to 1, skipping all -1 or all 1 after the first,
-    and multiply element-wise by 'indices'.
-
-    Returns a list of lists of single-element lists, e.g., [[1],[2],[3],[4]].
-    """
-    outcomes = []
-    for p in product([-1, 1], repeat=n-1):
-        combo = [1] + list(p)
-        # skip all -1 or all 1 after the first
-        if all(x == -1 for x in combo[1:]) or all(x == 1 for x in combo[1:]):
-            continue
-        # element-wise multiply and wrap each element in a list
-        multiplied = [[c*i] for c, i in zip(combo, indices)]
-        outcomes.append(multiplied)
-    return outcomes
 
 ### code 
 
@@ -49,7 +31,7 @@ def coordinate_fixes(n, indices=[1,2,3,4]):
 
 x = symbols('x')
 m = 2 # m is the potential Hales-Jewett number 
-n = 4 # n is the length of the alphabet
+n = 3 # n is the length of the alphabet
 c = 2 # don't actually use this, just a reminder that we set c = 2
 # so, we're looking at HJ(n,2)
 hales_found = False
@@ -65,7 +47,6 @@ while not hales_found:
     variable_words = []
     cells = list(product(alphabet, repeat=m))
     print(f"There are {len(cells)} cells in this hypercube.", flush = True)
-    coord_fixes = coordinate_fixes(n)
     #for c in cells:
     #    print(c)
 
@@ -92,70 +73,44 @@ while not hales_found:
     print(f"For m = {m} and n = {n}, there are {len(variable_words)} variable words.", flush=True)
 
 
+
     combinatorial_lines = []
     for vw in variable_words:
         combinatorial_lines.append(combinatorial_line(vw, alphabet))
     
     print(f"We generated {len(combinatorial_lines)} combinatorial lines.", flush = True)
+    if m == 5:
+        for cl in combinatorial_lines:
+            print(cl)
+
     map = create_var_map(cells)
     # print("Below is the tuple to integer mapping: \n",map)
 
 
-## CREATING THE SOLVER
     boolean_literals = list(map.values())
     # print("Below is a list of boolean literals:\n", boolean_literals)
 
-    for i, coord in enumerate(coord_fixes):
-        print("Fixing coordinates:", coord)
-        solver = Solver(name='glucose4') # just choosing a random solver for now
-        print("GENERATING LITERALS & CLAUSES", flush=True)
+    solver = Solver(name='glucose4') # just choosing a random solver for now
+    print("GENERATING LITERALS & CLAUSES", flush=True)
 
-        for cl in combinatorial_lines: # for each combinatorial line, we are going to generate 2 clauses
-            literals = [map[tuple(c)] for c in cl] # convert all to literals via my integer mapping
-            negated_literals = [-lit for lit in literals] 
-            clause_1 = literals # returns false if the whole line is monochromatic blue 
-            clause_2 = negated_literals # returns false if the whole line is monochromatic red
-            solver.add_clause(clause_1)
-            solver.add_clause(clause_2)
-            #print(clause_1)
-            #print(clause_2)
 
-        for c in coord:
-            solver.add_clause(c) # add the coordinate fix -- add them independently so they read as ands
-        # solver.add_clause([1]) # symmetry breaking
-        print(f"There are {len(combinatorial_lines)*2 + 2} clauses in our CNF formula.", flush = True)
-        print("Testing solver!", flush=True)
- 
+    for cl in combinatorial_lines: # for each combinatorial line, we are going to generate 2 clauses
+        literals = [map[tuple(c)] for c in cl] # convert all to literals via my integer mapping
+        negated_literals = [-lit for lit in literals] 
+        clause_1 = literals # returns false if the whole line is monochromatic blue 
+        clause_2 = negated_literals # returns false if the whole line is monochromatic red
+        solver.add_clause(clause_1)
+        solver.add_clause(clause_2)
+        print(clause_1)
+        print(clause_2)
 
-        if solver.solve():
-            model = solver.get_model()    # returns a list of integers
-            print(model)
-            print("Satisfiable -- incrementing m", flush=True)
-            m += 1
-            end_time = time.time()
-            print("Solver runtime:", end_time - start_time, "seconds\n\n", flush=True)
-            break
-            #print("solution:")
-            #print(model, "\n\n")
-        else:
-            if i == len(coord_fixes)-1:
-                print(f"Unsatisfiable, HJ(2,{n}) = {m}", flush=True)
-                hales_found = True
-            else:
-                continue
-        solver.delete()
-        end_time = time.time()
-        print("Solver runtime:", end_time - start_time, "seconds\n\n", flush=True)
+    print(f"There are {len(combinatorial_lines)*2} clauses in our CNF formula.", flush = True)
+    print("Testing solver", flush=True)
 
-        #current, peak = tracemalloc.get_traced_memory()
-        #print(f"Current memory usage: {current / 1024:.2f} KB", flush=True)
-        #print(f"Peak memory usage: {peak / 1024:.2f} KB", flush=True)
 
-        #tracemalloc.stop()
-       
-'''
+    solver.add_clause([1]) # symmetry breaking?
 
-    
+
     solution_count = 0
 
     for model in solver.enum_models():
@@ -177,6 +132,30 @@ while not hales_found:
     end_time = time.time()
     print("Solver runtime:", end_time - start_time, "seconds\n\n", flush=True)
 
+'''
+
+
+    if solver.solve():
+        model = solver.get_model()    # returns a list of integers
+        print("Satisfiable -- incrementing m", flush=True)
+        m += 1
+        print("solution:")
+        print(model, "\n\n")
+    else:
+        print(f"Unsatisfiable, HJ(2,{n}) = {m}", flush=True)
+        hales_found = True
+    solver.delete()
+    end_time = time.time()
+
+    current, peak = tracemalloc.get_traced_memory()
+    print(f"Current memory usage: {current / 1024:.2f} KB", flush=True)
+    print(f"Peak memory usage: {peak / 1024:.2f} KB", flush=True)
+
+    tracemalloc.stop()
+    print("Solver runtime:", end_time - start_time, "seconds\n\n", flush=True)
+
+
+    
 fig = plt.figure()
 ax = fig.add_subplot(111, projection="3d")
 

@@ -35,8 +35,10 @@ solution_count = 0
 chunk2_solutions = []
 
 for model in solver.enum_models():
-    mapped_model = [rev_map[abs(lit)] if lit > 0 else -rev_map[abs(lit)]
-                for lit in model if abs(lit) in rev_map]
+    mapped_model = set(
+        rev_map[abs(lit)] if lit > 0 else -rev_map[abs(lit)]
+        for lit in model if abs(lit) in rev_map
+    )
     chunk2_solutions.append(mapped_model)
     solution_count += 1
 
